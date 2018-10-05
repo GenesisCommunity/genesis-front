@@ -25,7 +25,7 @@ script:
   - |
     if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then
       yarn build-desktop
-      echo \{\"fullNodes\":[\"https://community-testnet0.genesis.space:7079\",\"https://community-testnet1.genesis.space:7079\",\"https://community-testnet2.genesis.space:7079\"]\} > ./build/settings.json
+      echo \{\"fullNodes\":[\"https://community-testnet0.genesis.space:7079\",\"https://community-testnet1.genesis.space:7079\",\"https://community-testnet2.genesis.space:7079\"]\} > ./build/app/settings.json
       yarn release -ml
       yarn release -w
     fi
