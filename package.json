@@ -7,7 +7,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/GenesisKernel/genesis-front"
+        "url": "https://github.com/GenesisCommunity/genesis-front"
     },
     "private": true,
     "main": "./electron/index.js",
