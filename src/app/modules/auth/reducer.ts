@@ -1,41 +1,59 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as actions from './actions';
 import { reducerWithInitialState } from 'typescript-fsa-reducers';
-import { IStoredAccount } from 'genesis/storage';
+import { IWallet, IRole, ISession } from 'genesis/auth';
+import loginHandler from './reducers/loginHandler';
+import loginDoneHandler from './reducers/loginDoneHandler';
+import loginFailedHandler from './reducers/loginFailedHandler';
+import logoutDoneHandler from './reducers/logoutDoneHandler';
+import createWalletHandler from './reducers/createWalletHandler';
+import createWalletDoneHandler from './reducers/createWalletDoneHandler';
+import createWalletFailedHandler from './reducers/createWalletFailedHandler';
+import importWalletHandler from './reducers/importWalletHandler';
+import importWalletDoneHandler from './reducers/importWalletDoneHandler';
+import importWalletFailedHandler from './reducers/importWalletFailedHandler';
+import importSeedDoneHandler from './reducers/importSeedDoneHandler';
+import selectWalletHandler from './reducers/selectWalletHandler';
+import authorizeHandler from './reducers/authorizeHandler';
+import deauthorizeHandler from './reducers/deauthorizeHandler';
+import generateSeedDoneHandler from './reducers/generateSeedDoneHandler';
+import selectRoleDoneHandler from './reducers/selectRoleDoneHandler';
 
 export type State = {
     readonly loadedSeed: string;
     readonly isAuthenticated: boolean;
-    readonly authenticationError: string;
     readonly isLoggingIn: boolean;
-    readonly isNodeOwner: boolean;
-    readonly isEcosystemOwner: boolean;
-    readonly isCreatingAccount: boolean;
-    readonly createAccountError: string;
-    readonly isImportingAccount: boolean;
-    readonly importAccountError: string;
+    readonly isCreatingWallet: boolean;
+    readonly createWalletError: string;
+    readonly isImportingWallet: boolean;
+    readonly importWalletError: string;
     readonly id: string;
-    readonly sessionToken: string;
-    readonly refreshToken: string;
-    readonly socketToken: string;
-    readonly timestamp: string;
-    readonly defaultAccount: string;
-    readonly account: IStoredAccount;
+    readonly session: ISession;
+    readonly defaultWallet: string;
+    readonly wallet: IWallet;
+    readonly role: IRole;
+    readonly roles: IRole[];
     readonly privateKey: string;
     readonly ecosystem: string;
 };
@@ -43,154 +61,35 @@ export type State = {
 export const initialState: State = {
     loadedSeed: null,
     isAuthenticated: false,
-    authenticationError: null,
     isLoggingIn: false,
-    isNodeOwner: false,
-    isEcosystemOwner: false,
-    isCreatingAccount: false,
-    createAccountError: null,
-    isImportingAccount: false,
-    importAccountError: null,
+    isCreatingWallet: false,
+    createWalletError: null,
+    isImportingWallet: false,
+    importWalletError: null,
     id: null,
-    sessionToken: null,
-    refreshToken: null,
-    socketToken: null,
-    timestamp: null,
-    defaultAccount: null,
-    account: null,
+    session: null,
+    defaultWallet: null,
+    wallet: null,
+    role: null,
+    roles: null,
     privateKey: null,
     ecosystem: null
 };
 
 export default reducerWithInitialState<State>(initialState)
-    // Login
-    .case(actions.login.started, (state, payload) => ({
-        ...state,
-        isAuthenticated: false,
-        isLoggingIn: true,
-        isNodeOwner: false,
-        isEcosystemOwner: false,
-        account: null,
-        sessionToken: null,
-        refreshToken: null,
-        socketToken: null,
-        timestamp: null
-    }))
-    .case(actions.login.done, (state, payload) => ({
-        ...state,
-        isAuthenticated: true,
-        isLoggingIn: false,
-        isNodeOwner: payload.result.isnode,
-        isEcosystemOwner: payload.result.isowner,
-        account: payload.result.account,
-        ecosystem: payload.result.ecosystem_id,
-        sessionToken: payload.result.token,
-        refreshToken: payload.result.refresh,
-        privateKey: payload.result.privateKey,
-        socketToken: payload.result.notify_key,
-        timestamp: payload.result.timestamp,
-        authenticationError: null,
-        id: payload.result.account.id
-    }))
-    .case(actions.login.failed, (state, payload) => ({
-        ...state,
-        isLoggingIn: false,
-        authenticationError: payload.error
-    }))
-
-    // Logout
-    .case(actions.logout.done, (state, payload) => ({
-        ...state,
-        account: null,
-        isAuthenticated: false,
-        isLoggingIn: false,
-        isNodeOwner: false,
-        isEcosystemOwner: false
-    }))
-
-    // CreateAccount
-    .case(actions.createAccount.started, (state, payload) => ({
-        ...state,
-        isCreatingAccount: true,
-        createAccountError: null
-    }))
-    .case(actions.createAccount.done, (state, payload) => ({
-        ...state,
-        isCreatingAccount: false,
-        createAccountError: null
-    }))
-    .case(actions.createAccount.failed, (state, payload) => ({
-        ...state,
-        isCreatingAccount: false,
-        createAccountError: payload.error
-    }))
-
-    // ImportAccount
-    .case(actions.importAccount.started, (state, payload) => ({
-        ...state,
-        isImportingAccount: true,
-        importAccountError: null
-    }))
-    .case(actions.importAccount.done, (state, payload) => ({
-        ...state,
-        isImportingAccount: false,
-        importAccountError: null
-    }))
-    .case(actions.importAccount.failed, (state, payload) => ({
-        ...state,
-        isImportingAccount: false,
-        importAccountError: payload.error
-    }))
-
-    // ImportAccount
-    .case(actions.importAccount.done, (state, payload) => {
-        if (payload.params.isDefault) {
-            return {
-                ...state,
-                defaultAccount: payload.result[0].id
-            };
-        }
-        else {
-            return state;
-        }
-    })
-
-    // ImportSeed
-    .case(actions.importSeed.done, (state, payload) => ({
-        ...state,
-        loadedSeed: payload.result
-    }))
-
-    // SwitchAccount
-    .case(actions.selectAccount.started, (state, payload) => ({
-        ...state,
-        authenticationError: null,
-        account: payload.account
-    }))
-    .case(actions.selectAccount.done, (state, payload) => ({
-        ...state,
-        isAuthenticated: true,
-        authenticationError: null,
-        sessionToken: payload.result.sessionToken,
-        refreshToken: payload.result.refreshToken,
-        socketToken: payload.params.account.socketToken,
-        timestamp: payload.params.account.timestamp,
-        account: payload.params.account,
-        id: payload.params.account.id
-    }))
-    .case(actions.selectAccount.failed, (state, payload) => ({
-        ...state,
-        isAuthenticated: false,
-        authenticationError: payload.error,
-        account: payload.params.account
-    }))
-
-    // Authorize/Deauthorize
-    .case(actions.authorize, (state, payload) => ({
-        ...state,
-        privateKey: payload.privateKey
-    }))
-    .case(actions.deauthorize, (state, payload) => ({
-        ...state,
-        privateKey: null
-    }));
+    .case(actions.login.started, loginHandler)
+    .case(actions.login.done, loginDoneHandler)
+    .case(actions.login.failed, loginFailedHandler)
+    .case(actions.logout.done, logoutDoneHandler)
+    .case(actions.createWallet.started, createWalletHandler)
+    .case(actions.createWallet.done, createWalletDoneHandler)
+    .case(actions.createWallet.failed, createWalletFailedHandler)
+    .case(actions.importWallet.started, importWalletHandler)
+    .case(actions.importWallet.done, importWalletDoneHandler)
+    .case(actions.importWallet.failed, importWalletFailedHandler)
+    .case(actions.importSeed.done, importSeedDoneHandler)
+    .case(actions.selectWallet, selectWalletHandler)
+    .case(actions.selectRole.done, selectRoleDoneHandler)
+    .case(actions.authorize, authorizeHandler)
+    .case(actions.deauthorize, deauthorizeHandler)
+    .case(actions.generateSeed.done, generateSeedDoneHandler);

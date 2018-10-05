@@ -1,47 +1,54 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
 import { FormattedMessage } from 'react-intl';
-import { Button, Modal, Well } from 'react-bootstrap';
+import { Button, Well } from 'react-bootstrap';
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
+
+import Modal from './';
 
 export interface IImageEditorModalProps {
     mime: string;
     data: string;
     aspectRatio: number;
     width: number;
-    onSuccess: (result: string) => void;
 }
 
-class ImageEditorModal extends React.Component<IImageEditorModalProps> {
+class ImageEditorModal extends Modal<IImageEditorModalProps, string> {
     private _cropper: Cropper = null;
 
     onSuccess() {
         const input = this._cropper.getCroppedCanvas();
 
-        if (this.props.width) {
+        if (this.props.params.width) {
             const output = document.createElement('canvas'),
                 ctx = output.getContext('2d'),
                 oc = document.createElement('canvas'),
                 octx = oc.getContext('2d');
 
-            output.width = this.props.width;
-            output.height = this.props.width * input.height / input.width;
+            output.width = this.props.params.width;
+            output.height = this.props.params.width * input.height / input.width;
 
             let current = {
                 width: Math.floor(input.width * 0.5),
@@ -53,7 +60,7 @@ class ImageEditorModal extends React.Component<IImageEditorModalProps> {
 
             octx.drawImage(input, 0, 0, current.width, current.height);
 
-            while (current.width * 0.5 > this.props.width) {
+            while (current.width * 0.5 > this.props.params.width) {
                 current = {
                     width: Math.floor(current.width * 0.5),
                     height: Math.floor(current.height * 0.5)
@@ -62,20 +69,18 @@ class ImageEditorModal extends React.Component<IImageEditorModalProps> {
             }
 
             ctx.drawImage(oc, 0, 0, current.width, current.height, 0, 0, output.width, output.height);
-            this.props.onSuccess(output.toDataURL(this.props.mime));
+            this.props.onResult(output.toDataURL(this.props.params.mime));
         }
         else {
-            this.props.onSuccess(input.toDataURL(this.props.mime));
+            this.props.onResult(input.toDataURL(this.props.params.mime));
         }
     }
 
     render() {
         return (
-            <Modal show={!!this.props.data} onHide={() => undefined as any}>
+            <div>
                 <Modal.Header>
-                    <Modal.Title>
-                        <FormattedMessage id="modal.imageeditor.title" defaultMessage="Image editor" />
-                    </Modal.Title>
+                    <FormattedMessage id="modal.imageeditor.title" defaultMessage="Image editor" />
                 </Modal.Header>
                 <Modal.Body>
                     <Well>
@@ -83,21 +88,21 @@ class ImageEditorModal extends React.Component<IImageEditorModalProps> {
                     </Well>
                     <Cropper
                         ref={(ref: any) => this._cropper = ref}
-                        src={this.props.data}
+                        src={this.props.params.data}
                         style={{ maxHeight: 400, width: '100%' }}
-                        aspectRatio={this.props.aspectRatio}
+                        aspectRatio={this.props.params.aspectRatio}
                         viewMode={1}
                     />
                 </Modal.Body>
                 <Modal.Footer className="text-right">
-                    <Button type="button" bsStyle="link" onClick={this.props.onSuccess.bind(null, null)}>
+                    <Button type="button" bsStyle="link" onClick={this.props.onCancel.bind(this)}>
                         <FormattedMessage id="modal.imageeditor.cancel" defaultMessage="Cancel" />
                     </Button>
                     <Button type="button" bsStyle="primary" onClick={this.onSuccess.bind(this)}>
                         <FormattedMessage id="modal.imageeditor.confirm" defaultMessage="Confirm" />
                     </Button>
                 </Modal.Footer>
-            </Modal >
+            </div>
         );
     }
 }

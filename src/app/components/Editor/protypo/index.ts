@@ -1,18 +1,24 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 /// <reference types="monaco-editor" />
 
@@ -92,6 +98,24 @@ const register = (editor: typeof monaco) => {
             documentation: 'Logical "And" operator. All parameters must be truthy',
             kind: monaco.languages.CompletionItemKind.Function,
             insertText: 'And('
+        },
+        ArrayToSource: {
+            label: 'ArrayToSource',
+            documentation: 'Data emitter that converts JSON array to a source',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'ArrayToSource(',
+            params: [
+                {
+                    label: 'Source',
+                    documentation: 'Source identificator to bind results',
+                    insertText: 'Source: '
+                },
+                {
+                    label: 'Data',
+                    documentation: 'Emitted data that must be a valid json-formatted string',
+                    insertText: 'Data: '
+                }
+            ]
         },
         DBFind: {
             label: 'DBFind',
@@ -210,6 +234,34 @@ const register = (editor: typeof monaco) => {
             params: [
                 staticParamTypes.Body,
                 staticParamTypes.Class
+            ]
+        },
+        GetHistory: {
+            label: 'GetHistory',
+            documentation: 'Retrieve entity change history',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'GetHistory(',
+            params: [
+                {
+                    label: 'Source',
+                    documentation: 'Source identificator to bind results',
+                    insertText: 'Source: '
+                },
+                {
+                    label: 'Name',
+                    documentation: 'Entity type',
+                    insertText: 'Name: '
+                },
+                {
+                    label: 'Id',
+                    documentation: 'Database entry id',
+                    insertText: 'Id: '
+                },
+                {
+                    label: 'RollbackId',
+                    documentation: 'Rollback ID bound to the result',
+                    insertText: 'RollbackId: '
+                }
             ]
         },
         GetVar: {
@@ -363,6 +415,57 @@ const register = (editor: typeof monaco) => {
                 }
             ]
         },
+        InputMap: {
+            label: 'InputMap',
+            documentation: 'Form element to work with map coords',
+            kind: monaco.languages.CompletionItemKind.Method,
+            insertText: 'InputMap(',
+            params: [
+                staticParamTypes.Class,
+                {
+                    label: 'Name',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    documentation: 'Unique input name to bind the value to',
+                    insertText: 'Name: '
+                },
+                {
+                    label: 'Value',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    documentation: 'Default input value',
+                    insertText: 'Value: '
+                },
+                {
+                    label: 'Type',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    documentation: '',
+                    insertText: 'Type: '
+                },
+                {
+                    label: 'MapType',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    documentation: 'Identifier for common map types',
+                    insertText: 'MapType: '
+                }
+            ]
+        },
+        JsonToSource: {
+            label: 'JsonToSource',
+            documentation: 'Data emitter that converts JSON string to a source',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'JsonToSource(',
+            params: [
+                {
+                    label: 'Source',
+                    documentation: 'Source identificator to bind results',
+                    insertText: 'Source: '
+                },
+                {
+                    label: 'Data',
+                    documentation: 'Emitted data that must be a valid json-formatted string',
+                    insertText: 'Data: '
+                }
+            ]
+        },
         Label: {
             label: 'Label',
             documentation: 'Form input label. Will set focus to bound input on click',
@@ -496,6 +599,19 @@ const register = (editor: typeof monaco) => {
                 staticParamTypes.Class
             ]
         },
+        QRcode: {
+            label: 'QRcode',
+            documentation: 'Generate QRCode image from text payload',
+            kind: monaco.languages.CompletionItemKind.Method,
+            insertText: 'QRcode(',
+            params: [
+                {
+                    label: 'Text',
+                    documentation: 'Text payload to encode',
+                    insertText: 'Text: '
+                }
+            ]
+        },
         RadioGroup: {
             label: 'RadioGroup',
             documentation: 'List of options represented with radio buttons',
@@ -529,6 +645,38 @@ const register = (editor: typeof monaco) => {
                     insertText: 'Value: '
                 },
                 staticParamTypes.Class
+            ]
+        },
+        Range: {
+            label: 'Range',
+            documentation: 'Generate array of numbers. Represents a data-source',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'Range(',
+            params: [
+                {
+                    label: 'Source',
+                    documentation: 'Source identificator to bind results',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    insertText: 'Source: '
+                },
+                {
+                    label: 'From',
+                    documentation: 'Initial counter value',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    insertText: 'From: '
+                },
+                {
+                    label: 'To',
+                    documentation: 'Final counter value(exclusive)',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    insertText: 'To: '
+                },
+                {
+                    label: 'Step',
+                    documentation: 'Value that will be added for each step',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    insertText: 'Step: '
+                }
             ]
         },
         Select: {
@@ -649,9 +797,13 @@ const register = (editor: typeof monaco) => {
             const textUntilPosition = model.getValueInRange({ startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
 
             // Match function parameters. There must be an opening bracket or separating comma
-            const paramsMatch = textUntilPosition.match(/ ?([A-Z][a-zA-Z]*)\(([a-zA-Z]*.*,)*[ a-zA-Z]*$/);
-            if (paramsMatch && functionDefs[paramsMatch[1]]) {
-                return functionDefs[paramsMatch[1]].params;
+            const paramsMatch = textUntilPosition.match(/([A-Z][a-zA-Z]*)\(/g);
+
+            if (paramsMatch) {
+                const token = paramsMatch[paramsMatch.length - 1].slice(0, -1);
+                if (functionDefs[token]) {
+                    return functionDefs[token].params;
+                }
             }
 
             return functionProposals();

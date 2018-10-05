@@ -1,18 +1,24 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
 import { Form, FormProps } from 'react-bootstrap';
@@ -36,6 +42,7 @@ export interface IValidatedFormState {
 
 export interface IValidationResult {
     name: string;
+    index?: number;
     error: boolean;
     validator?: Validator;
     value?: any;
@@ -43,7 +50,10 @@ export interface IValidationResult {
 
 export interface IValidatedControl {
     getValue: () => any;
-    props: { validators?: Validator[] };
+    props: {
+        name: string;
+        validators?: Validator[];
+    };
 }
 
 interface IValidationElement {
@@ -52,8 +62,15 @@ interface IValidationElement {
     validators: Validator[];
 }
 
+interface IFormListener {
+    (e: IValidationResult): void;
+}
+
 export default class ValidatedForm extends React.Component<IValidatedFormProps, IValidatedFormState> {
-    private _elements: { [name: string]: IValidationElement } = {};
+    private _elements: {
+        [name: string]: IValidationElement[];
+    } = {};
+    private _listeners: IFormListener[] = [];
 
     constructor(props: IValidatedFormProps) {
         super(props);
@@ -68,16 +85,33 @@ export default class ValidatedForm extends React.Component<IValidatedFormProps, 
         };
     }
 
-    _registerElement(name: string, node: IValidatedControl) {
-        this._elements[name] = {
+    _registerElement(node: IValidatedControl) {
+        const name = node.props.name;
+
+        if (!this._elements[name]) {
+            this._elements[name] = [];
+        }
+
+        this._elements[name].push({
             name,
             node,
             validators: node.props.validators
-        };
+        });
     }
 
-    _unregisterElement(name: string) {
-        delete this._elements[name];
+    _unregisterElement(node: IValidatedControl) {
+        const name = node.props.name;
+
+        if (this._elements[name]) {
+            const index = this._elements[name].findIndex(l => l.node === node);
+            if (-1 !== index) {
+                this._elements[name].splice(index);
+            }
+
+            if (0 === this._elements[name].length) {
+                delete this._elements[name];
+            }
+        }
     }
 
     private _onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -98,12 +132,24 @@ export default class ValidatedForm extends React.Component<IValidatedFormProps, 
         }
     }
 
+    onUpdate(listener: IFormListener) {
+        this._listeners.push(listener);
+
+        Object.keys(this._elements).forEach(input =>
+            this._elements[input].forEach(l => {
+                const result = this.validate(input, l.node.getValue());
+                listener(result);
+            })
+        );
+    }
+
     isPending() {
         return this.props.pending;
     }
 
     updateState(name: string, value?: any) {
-        const result = this.validate(name, value);
+        const result = this.emitUpdate(name, value);
+        this._listeners.forEach(l => l(result));
         this.setState({
             payload: {
                 ...this.state.payload,
@@ -115,14 +161,20 @@ export default class ValidatedForm extends React.Component<IValidatedFormProps, 
         });
     }
 
+    emitUpdate(name: string, value?: any) {
+        const result = this.validate(name, value);
+        this._listeners.forEach(l => l(result));
+        return result;
+    }
+
     getState(name: string) {
         const value = this.state.payload[name];
         return (!value || !value.dirty || !value.invalid);
     }
 
     validate(name: string, withValue?: any): IValidationResult {
-        const element = this._elements[name];
-        if (!element) {
+        const elements = this._elements[name];
+        if (!elements) {
             return {
                 name,
                 error: false,
@@ -130,27 +182,42 @@ export default class ValidatedForm extends React.Component<IValidatedFormProps, 
             };
         }
 
-        const value = withValue || element.node.getValue();
+        const results: any[] = [];
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            const value = withValue || element.node.getValue();
 
-        if (element.validators) {
-            for (let i = 0; i < element.validators.length; i++) {
-                const validator = element.validators[i];
+            if (element.validators) {
+                for (let v = 0; v < element.validators.length; v++) {
+                    const validator = element.validators[v];
 
-                if (!validator.validate(value)) {
-                    return {
-                        name,
-                        error: true,
-                        validator
-                    };
+                    if (!validator.validate(value)) {
+                        return {
+                            name,
+                            index: v,
+                            error: true,
+                            validator
+                        };
+                    }
                 }
             }
+            results.push(value);
         }
 
-        return {
-            name,
-            error: false,
-            value
-        };
+        if (1 < results.length) {
+            return {
+                name,
+                error: false,
+                value: results
+            };
+        }
+        else {
+            return {
+                name,
+                error: false,
+                value: results[0]
+            };
+        }
     }
 
     validateAll(): { valid: boolean, payload: { [key: string]: IValidationResult } } {

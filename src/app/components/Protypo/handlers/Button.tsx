@@ -1,33 +1,37 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-import * as React from 'react';
+import React from 'react';
+import propTypes from 'prop-types';
 import { injectIntl, InjectedIntlProps } from 'react-intl';
-import * as propTypes from 'prop-types';
-import * as classnames from 'classnames';
+import StyledComponent from './StyledComponent';
 
 import Protypo, { IParamsSpec } from '../Protypo';
 import ValidatedForm from 'components/Validation/ValidatedForm';
-import TxButton from 'containers/Widgets/TxButton';
-
-import TagWrapper from '../components/TagWrapper';
-import DnDComponent from './DnDComponent';
+import TxButton from 'containers/Button/TxButton';
 
 export interface IButtonProps {
     'class'?: string;
+    'className'?: string;
     'alert'?: {
         icon: string;
         text: string;
@@ -35,36 +39,25 @@ export interface IButtonProps {
         cancelbutton: string;
     };
     'contract'?: string;
+    'composite'?: {
+        name: string;
+        data: {
+            [key: string]: any;
+        }[]
+    }[];
+    'popup'?: {
+        header?: string;
+        width?: string;
+    };
     'page'?: string;
     'pageparams'?: IParamsSpec;
     'params'?: IParamsSpec;
     'formID'?: number;
-
-    'editable'?: boolean;
-    'changePage'?: any;
-    'setTagCanDropPosition'?: any;
-    'addTag'?: any;
-    'moveTag'?: any;
-    'copyTag'?: any;
-    'removeTag'?: any;
-    'selectTag'?: any;
-    'selected'?: boolean;
-    'tag'?: any;
-
-    'canDropPosition'?: string;
-
-    connectDropTarget?: any;
-    isOver?: boolean;
-
-    connectDragSource?: any;
-    connectDragPreview?: any;
-    isDragging?: boolean;
 }
 
 interface IButtonContext {
     form: ValidatedForm;
     protypo: Protypo;
-    vde?: boolean;
 }
 
 const Button: React.SFC<IButtonProps & InjectedIntlProps> = (props, context: IButtonContext) => {
@@ -109,61 +102,18 @@ const Button: React.SFC<IButtonProps & InjectedIntlProps> = (props, context: IBu
         }
     };
 
-    const onClick = (e: any) => {
-        e.stopPropagation();
-        props.selectTag({ tag: props.tag });
-    };
-
-    const onBlur = (e: any) => {
-        e.stopPropagation();
-        props.changePage({ text: e.target.innerHTML, tagID: props.tag.id });
-    };
-
-    const removeTag = () => {
-        props.removeTag({ tag: props.tag });
-    };
-
-    if (props.editable) {
-        const { connectDropTarget, connectDragSource, connectDragPreview, isOver } = props;
-
-        const classes = classnames({
-            [props.class]: true,
-            // [props.className]: true,
-            'b-selected': props.selected
-        });
-
-        return connectDragPreview(connectDropTarget(
-            <span style={{display: 'inline-block'}}>
-                <TagWrapper
-                    display="inline"
-                    selected={props.selected}
-                    canDrop={isOver}
-                    canDropPosition={props.canDropPosition}
-                    onClick={onClick}
-                    removeTag={removeTag}
-                    connectDragSource={connectDragSource}
-                >
-                <button
-                    className={classes}
-                >
-                    <span
-                        contentEditable={props.selected}
-                        onBlur={onBlur}
-                    >
-                        {props.children}
-                    </span>
-                </button>
-                </TagWrapper>
-            </span>
-        ));
+    let popup: { title?: string, width?: number } = null;
+    if (props.popup) {
+        const width = parseInt(props.popup.width, 10);
+        popup = {
+            title: props.popup.header,
+            width: width === width ? width : null
+        };
     }
 
     return (
         <TxButton
-            vde={context.vde}
-            className={props.class}
-            contractName={props.contract}
-            contractParams={getParams}
+            className={[props.class, props.className].join(' ')}
             confirm={props.alert && {
                 icon: props.alert.icon,
                 title: props.intl.formatMessage({ id: 'alert.confirmation', defaultMessage: 'Confirmation' }),
@@ -171,8 +121,15 @@ const Button: React.SFC<IButtonProps & InjectedIntlProps> = (props, context: IBu
                 confirmButton: props.alert.confirmbutton,
                 cancelButton: props.alert.cancelbutton
             }}
+            contracts={props.composite && props.composite.map(tx => ({
+                name: tx.name,
+                params: tx.data
+            }))}
+            contract={props.contract}
+            contractParams={getParams}
             page={props.page}
             pageParams={getPageParams}
+            popup={popup}
         >
             {props.children}
         </TxButton>
@@ -181,9 +138,7 @@ const Button: React.SFC<IButtonProps & InjectedIntlProps> = (props, context: IBu
 
 Button.contextTypes = {
     form: propTypes.object,
-    protypo: propTypes.object.isRequired,
-    vde: propTypes.bool
+    protypo: propTypes.object.isRequired
 };
 
-export default injectIntl(Button);
-export const ButtonDnD = DnDComponent(injectIntl(Button));
+export default injectIntl(StyledComponent(Button));

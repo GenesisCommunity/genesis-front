@@ -1,18 +1,24 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
-//
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// MIT License
+// 
+// Copyright (c) 2016-2018 GenesisKernel
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
 import styled from 'styled-components';
@@ -29,7 +35,6 @@ const TabsContainer = styled.div`
     flex-direction: column;
 
     .tab-pane {
-        height: 100%;
         display: none; 
         flex: 1 1;
         -ms-flex-direction: column;
@@ -42,7 +47,9 @@ const TabsContainer = styled.div`
 `;
 
 const TabContent = styled.div`
-    height: 100%;
+    display: flex;
+    flex: 1 1;
+    flex-direction: column;
 `;
 
 const TabItem = styled.div`
@@ -103,9 +110,9 @@ const TabItem = styled.div`
 `;
 
 export interface IConstructorTabsProps {
-    tabList: { id: string, type: string, name?: string, vde?: boolean, visible?: boolean }[];
+    tabList: { id: string, type: string, name?: string, visible?: boolean }[];
     children: JSX.Element[];
-    openedTab: { id: string, type: string, vde: boolean };
+    openedTab: { id: string, type: string };
     onTabClose?: any;
     className?: string;
 }
@@ -134,7 +141,7 @@ export default class ConstructorTabs extends React.Component<IConstructorTabsPro
     componentWillReceiveProps(props: IConstructorTabsProps) {
         // open selected tab
         if (props.tabList && !this.state.loaded) {
-            let tabIndex = props.tabList.findIndex((item: any) => item.id === props.openedTab.id && item.type === props.openedTab.type && !!item.vde === !!props.openedTab.vde);
+            let tabIndex = props.tabList.findIndex((item: any) => item.id === props.openedTab.id && item.type === props.openedTab.type);
             if (tabIndex >= 0 && this.state.tabIndex < tabIndex) {
                 this.setState({
                     tabIndex,
@@ -144,11 +151,11 @@ export default class ConstructorTabs extends React.Component<IConstructorTabsPro
         }
     }
 
-    onTabClose(id: string, type: string, vde: boolean) {
+    onTabClose(id: string, type: string) {
         // if closed tab was active, set first tab active
 
         if (this.props.tabList) {
-            let closedTabItemIndex = this.props.tabList.findIndex((tabItem: any) => tabItem.id === id && tabItem.type === type && !!tabItem.vde === !!vde);
+            let closedTabItemIndex = this.props.tabList.findIndex((tabItem: any) => tabItem.id === id && tabItem.type === type);
             if (closedTabItemIndex === this.state.tabIndex) {
                 let switchToTabIndex = this.props.tabList.findIndex((tabItem: any, index: number) =>
                     tabItem.visible !== false && index !== closedTabItemIndex
@@ -167,7 +174,7 @@ export default class ConstructorTabs extends React.Component<IConstructorTabsPro
         ).length;
 
         if (this.props.onTabClose && openedTabs > 1) {
-            this.props.onTabClose(id, type, vde);
+            this.props.onTabClose(id, type);
         }
     }
 
@@ -177,8 +184,8 @@ export default class ConstructorTabs extends React.Component<IConstructorTabsPro
                 <TabItems>
                     {this.props.tabList && this.props.tabList.map((tab, index) => (
                         <TabItem key={index} className={`${index === this.state.tabIndex ? 'active' : ''} ${tab.visible === false ? 'hidden' : ''} ${tab.type}`}>
-                            <span onClick={this.onTabSwitch.bind(this, index)}>{(tab.vde ? 'VDE: ' : '') + tab.name}</span>
-                            <a href="javascript:void(0)" onClick={this.onTabClose.bind(this, tab.id, tab.type, tab.vde)}>&times;</a>
+                            <span onClick={this.onTabSwitch.bind(this, index)}>{tab.name}</span>
+                            <a href="javascript:void(0)" onClick={this.onTabClose.bind(this, tab.id, tab.type)}>&times;</a>
                         </TabItem>
                     ))}
                 </TabItems>

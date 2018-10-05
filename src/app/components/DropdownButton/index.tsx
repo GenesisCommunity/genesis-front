@@ -1,27 +1,34 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-import * as React from 'react';
-import * as classNames from 'classnames';
-import * as propTypes from 'prop-types';
-import styled from 'styled-components';
+import React from 'react';
+import classNames from 'classnames';
+import propTypes from 'prop-types';
+
+import themed from 'components/Theme/themed';
 import Dropdown from 'components/Animation/Dropdown';
 import onClickOutside, { InjectedOnClickOutProps } from 'react-onclickoutside';
 
-const StyledDropdown = styled.div`
+const StyledDropdown = themed.div`
     display: inline-block;
     position: relative;
 
@@ -35,6 +42,8 @@ const StyledDropdown = styled.div`
         line-height: 40px;
         padding: 0 10px;
         text-align: center;
+        position: relative;
+        z-index: 1000;
 
         .dropdown-badge {
             position: absolute;
@@ -53,10 +62,11 @@ const StyledDropdown = styled.div`
 
     .dropdown-content {
         line-height: normal;
-        background: #fff;
+        background: ${props => props.theme.dropdownMenuBackground};
         box-shadow: 0 0 25px rgba(0,0,0,.15);
-        border: solid 1px #add1ff;
+        border: solid 1px ${props => props.theme.dropdownMenuOutline};
         border-top: none;
+        text-align: left;
 
         &.dropdown-leftmost {
             border-left: none;
@@ -66,18 +76,29 @@ const StyledDropdown = styled.div`
             border-right: none;
         }
 
+        &.icon-left .dropdown-group > li button > .icon {
+            float: left;
+            margin-right: 12px;
+        }
+
         .dropdown-heading {
-            border-top: solid 1px #ddd;
+            border-top: solid 1px ${props => props.theme.dropdownMenuSeparator};
             height: 30px;
             line-height: 30px;
             padding: 0 15px;
             font-size: 11px;
             text-transform: uppercase;
-            color: #999;
+            color: ${props => props.theme.dropdownMenuSecondary};
 
             &:first-child {
                 border-top: none;
             }
+        }
+
+        .dropdown-info {
+            font-size: 14px;
+            padding: 0 15px;
+            color: ${props => props.theme.dropdownMenuPrimary};
         }
 
         .dropdown-group {
@@ -91,8 +112,12 @@ const StyledDropdown = styled.div`
                 }
 
                 button {
+                    border-radius: 0;
+                    outline: 0;
+                    border: 0;
+                    background: 0;
+                    transition: background .15s;
                     width: 100%;
-                    display: block;
                     padding: 0 15px !important;
                     margin: 0;
                     height: 40px;
@@ -100,7 +125,7 @@ const StyledDropdown = styled.div`
                     font-size: 13px;
                     font-weight: 500;
                     text-decoration: none;
-                    color: #666;
+                    color: ${props => props.theme.dropdownMenuForeground};
                     cursor: pointer;
                     display: block;
                     text-align: left;
@@ -113,7 +138,11 @@ const StyledDropdown = styled.div`
                     }
 
                     &[disabled] {
-                        color: #ccc;
+                        color: ${props => props.theme.dropdownMenuDisabled};
+                    }
+
+                    &:hover {
+                        background: ${props => props.theme.dropdownMenuActive};
                     }
 
                     &:focus {
@@ -133,6 +162,7 @@ export interface IDropdownButtonProps {
     align?: 'left' | 'right';
     width?: number;
     badge?: number;
+    disabled?: boolean;
     onClick?: React.EventHandler<React.MouseEvent<HTMLButtonElement>>;
 }
 
@@ -178,14 +208,14 @@ class DropdownButton extends React.Component<IDropdownButtonProps & InjectedOnCl
     render() {
         return (
             <StyledDropdown className={this.state.active ? 'dropdown-active' : ''}>
-                <button className={classNames('dropdown-toggle', this.props.className)} onClick={this.onClick.bind(this)}>
+                <button disabled={this.props.disabled} className={classNames('dropdown-toggle', this.props.className)} onClick={this.onClick.bind(this)}>
                     {this.props.children}
                     {this.props.badge ? (
                         <span className="dropdown-badge">{Math.min(this.props.badge, 99)}</span>
                     ) : null}
                 </button>
                 <Dropdown visible={this.state.active} align={this.props.align} width={this.props.width}>
-                    <div className={classNames('dropdown-content', { 'dropdown-leftmost': this.props.leftMost, 'dropdown-rightmost': this.props.rightMost })}>
+                    <div className={classNames('dropdown-content', { 'dropdown-leftmost': this.props.leftMost, 'dropdown-rightmost': this.props.rightMost, 'icon-left': 'left' === this.props.align })}>
                         {this.props.content}
                     </div>
                 </Dropdown>

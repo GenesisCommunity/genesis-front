@@ -1,150 +1,77 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
-import { Route } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { IRootState } from 'modules';
 import { IntlProvider } from 'react-intl';
-import { login } from 'modules/auth/actions';
-import { navigate, checkOnline, setLoading } from 'modules/engine/actions';
-import platform from 'lib/platform';
-import * as classnames from 'classnames';
-
-import { AnimatedSwitch } from 'components/Animation';
-import Splash from 'components/Splash';
-import ModalDispatcher from 'containers/Widgets/ModalDispatcher';
-import Main from 'containers/Main';
-import General from 'containers/General';
-
-import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
-
-import IntlHook from 'containers/App/IntlHook';
 import { switchWindow } from 'modules/gui/actions';
+import HTML5Backend from 'react-dnd-html5-backend';
 
-interface IAppProps {
+import App from 'components/App';
+import ThemeProvider from 'components/Theme/ThemeProvider';
+import baseTheme from 'components/Theme/baseTheme';
+
+export interface IAppContainerProps {
+}
+
+interface IAppContainerState {
     locale: string;
     isAuthenticated: boolean;
+    isLoaded: boolean;
     isCollapsed: boolean;
-    isLoggingIn: boolean;
-    isLoading: boolean;
-    isConnected: boolean;
-    isInstalled: boolean;
-    isConnecting: boolean;
-    isImportingAccount: boolean;
-    navigate?: typeof navigate;
-    setLoading?: typeof setLoading;
-    login?: typeof login.started;
-    checkOnline?: typeof checkOnline.started;
-    switchWindow?: typeof switchWindow.started;
+    localeMessages: { [key: string]: string };
 }
 
-class App extends React.Component<IAppProps> {
-    componentDidMount() {
-        if (!this.props.isConnecting && this.props.isLoading) {
-            this.props.checkOnline(null);
-        }
-    }
-
-    componentWillReceiveProps(props: IAppProps) {
-        if (this.props.isAuthenticated !== props.isAuthenticated) {
-            props.switchWindow({
-                window: props.isAuthenticated ? 'main' : 'general'
-            });
-        }
-
-        if (null === this.props.isConnected && null !== props.isConnected) {
-            if (props.isConnected) {
-                /*const privateKey = storage.settings.load('privateKey');
-                const lastEcosystem = storage.settings.load('lastEcosystem');
-                if (privateKey && props.isInstalled && !props.isAuthenticated && !props.isImportingAccount) {
-                    this.props.login({
-                        privateKey,
-                        ecosystem: lastEcosystem,
-                        remember: true
-                    });
-                }
-                else {
-                    this.props.setLoading(false);
-                }*/
-
-                props.setLoading(false);
-            }
-            else {
-                this.props.setLoading(false);
-            }
-        }
-
-        if (this.props.isAuthenticated !== props.isAuthenticated) {
-            this.props.setLoading(false);
-        }
-    }
-
-    render() {
-        const classes = classnames({
-            'wrapper': true,
-            'layout-fixed': true,
-            'aside-collapsed': this.props.isCollapsed,
-            'aside-toggled': !this.props.isCollapsed,
-            'platform-desktop': platform.select({ desktop: true }),
-            'platform-web': platform.select({ web: true }),
-        });
-
-        return (
-            <IntlProvider locale={this.props.locale} defaultLocale={this.props.locale}>
-                <div className={classes}>
-                    <IntlHook />
-                    <ModalDispatcher />
-                    <AnimatedSwitch animation={AnimatedSwitch.animations.fade()}>
-                        {this.props.isLoading && (
-                            <Route path="/" component={Splash} />
-                        )}
-                        {!this.props.isAuthenticated && (
-                            <Route path="/" component={General} />
-                        )}
-                        <Route path="/" component={Main} />
-                    </AnimatedSwitch>
-                </div>
-            </IntlProvider>
-        );
-    }
+interface IAppContainerDispatch {
+    switchWindow: typeof switchWindow.started;
 }
+
+const AppContainer: React.SFC<IAppContainerProps & IAppContainerState & IAppContainerDispatch> = props => (
+    <IntlProvider locale={props.locale} defaultLocale="en-US" messages={props.localeMessages}>
+        <ThemeProvider theme={baseTheme}>
+            <App
+                isAuthenticated={props.isAuthenticated}
+                isLoaded={props.isLoaded}
+                isCollapsed={props.isCollapsed}
+                switchWindow={props.switchWindow}
+            />
+        </ThemeProvider>
+    </IntlProvider>
+);
 
 const mapStateToProps = (state: IRootState) => ({
-    locale: state.engine.locale,
+    locale: state.storage.locale,
+    localeMessages: state.engine.localeMessages,
     isAuthenticated: state.auth.isAuthenticated,
     isCollapsed: state.engine.isCollapsed,
-    isLoggingIn: state.auth.isLoggingIn,
-    isLoading: state.engine.isLoading,
-    isInstalled: state.engine.isInstalled,
-    isConnected: state.engine.isConnected,
-    isConnecting: state.engine.isConnecting,
-    isImportingAccount: state.auth.isImportingAccount
+    isLoaded: state.engine.isLoaded
 });
 
 const mapDispatchToProps = {
-    navigate,
-    setLoading,
-    checkOnline: checkOnline.started,
-    login: login.started,
     switchWindow: switchWindow.started
 };
 
-// export default connect(mapStateToProps, mapDispatchToProps, null, { pure: false })(App);
 export default DragDropContext(HTML5Backend)(
-    connect(mapStateToProps, mapDispatchToProps, null, { pure: false })(App)
+    connect<IAppContainerState, IAppContainerDispatch, IAppContainerProps>(mapStateToProps, mapDispatchToProps, null, { pure: false })(AppContainer)
 );

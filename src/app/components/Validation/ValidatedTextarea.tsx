@@ -1,18 +1,24 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
 import { Validator } from './Validators';
@@ -21,6 +27,7 @@ import * as propTypes from 'prop-types';
 import ValidatedForm, { IValidatedControl } from './ValidatedForm';
 
 export interface IValidatedTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+    name: string;
     validators?: Validator[];
 }
 
@@ -39,13 +46,13 @@ export default class ValidatedTextarea extends React.Component<IValidatedTextare
 
     componentDidMount() {
         if (this.context.form) {
-            (this.context.form as ValidatedForm)._registerElement(this.props.name, this);
+            (this.context.form as ValidatedForm)._registerElement(this);
         }
     }
 
     componentWillUnmount() {
         if (this.context.form) {
-            (this.context.form as ValidatedForm)._unregisterElement(this.props.name);
+            (this.context.form as ValidatedForm)._unregisterElement(this);
         }
     }
 
@@ -62,7 +69,7 @@ export default class ValidatedTextarea extends React.Component<IValidatedTextare
         return this.state.value;
     }
 
-    onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         this.setState({
             value: (e.target as any).value
         });
@@ -70,9 +77,11 @@ export default class ValidatedTextarea extends React.Component<IValidatedTextare
         if (this.props.onChange) {
             this.props.onChange(e);
         }
+
+        (this.context.form as ValidatedForm).emitUpdate(this.props.name, e.target.value);
     }
 
-    onBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
+    onBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
         (this.context.form as ValidatedForm).updateState(this.props.name);
 
         if (this.props.onBlur) {
@@ -87,8 +96,8 @@ export default class ValidatedTextarea extends React.Component<IValidatedTextare
                 className={`form-control ${this.props.className || ''}`}
                 placeholder={this.props.placeholder}
                 value={this.state.value}
-                onChange={this.onChange.bind(this)}
-                onBlur={this.onBlur.bind(this)}
+                onChange={this.onChange}
+                onBlur={this.onBlur}
             />
         );
     }

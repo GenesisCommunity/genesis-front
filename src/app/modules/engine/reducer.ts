@@ -1,168 +1,55 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as actions from './actions';
-import { Action } from 'redux';
-import { isType } from 'typescript-fsa';
-import { InjectedIntl } from 'react-intl';
+import defaultLocale from 'lib/en-US.json';
+import { reducerWithInitialState } from 'typescript-fsa-reducers/dist';
+import initializeDoneHandler from './reducers/initializeDoneHandler';
+import setLocaleDoneHandler from './reducers/setLocaleDoneHandler';
+import setCollapsedHandler from './reducers/setCollapsedHandler';
+import initializeFailedHandler from './reducers/initializeFailedHandler';
+import initializeHandler from './reducers/initializeHandler';
 
 export type State = {
-    readonly locale: string;
-    readonly isInstalled: boolean;
-    readonly isInstalling: boolean;
-    readonly isLoading: boolean;
-    readonly isConnected: boolean;
-    readonly isConnecting: boolean;
+    readonly nodeHost: string;
+    readonly localeMessages: { [key: string]: string };
     readonly isCollapsed: boolean;
-    readonly isCreatingVDE: boolean;
-    readonly createVDEResult: boolean;
-    readonly intl: InjectedIntl;
+    readonly isLoaded: boolean;
+    readonly isOffline: boolean;
+    readonly isConnecting: boolean;
 };
 
 export const initialState: State = {
-    locale: 'en-US',
-    isInstalled: null,
-    isInstalling: false,
-    isLoading: true,
-    isConnected: null,
-    isConnecting: false,
-    isCreatingVDE: false,
-    createVDEResult: null,
+    nodeHost: null,
+    localeMessages: defaultLocale,
     isCollapsed: true,
-    intl: null
+    isLoaded: false,
+    isOffline: false,
+    isConnecting: false
 };
 
-export default (state: State = initialState, action: Action): State => {
-    if (isType(action, actions.checkOnline.started)) {
-        return {
-            ...state,
-            isConnecting: true
-        };
-    }
-
-    if (isType(action, actions.checkOnline.failed)) {
-        switch (action.payload.error) {
-            case 'E_NOTINSTALLED':
-                return {
-                    ...state,
-                    isInstalled: false,
-                    isConnected: true,
-                    isConnecting: false
-                };
-
-            default:
-                return {
-                    ...state,
-                    isConnected: false,
-                    isConnecting: false
-                };
-        }
-    }
-
-    if (isType(action, actions.checkOnline.done)) {
-        return {
-            ...state,
-            isInstalled: true,
-            isConnected: action.payload.result,
-            isConnecting: false
-        };
-    }
-
-    if (isType(action, actions.checkOnline.failed)) {
-        switch (action.payload.error) {
-            case 'E_NOTINSTALLED':
-                return {
-                    ...state,
-                    isInstalled: false,
-                    isConnected: true,
-                    isConnecting: false
-                };
-
-            default:
-                return {
-                    ...state,
-                    isConnected: false,
-                    isConnecting: false
-                };
-        }
-    }
-
-    if (isType(action, actions.setLoading)) {
-        return {
-            ...state,
-            isLoading: action.payload
-        };
-    }
-
-    if (isType(action, actions.install.started)) {
-        return {
-            ...state,
-            isInstalling: true
-        };
-    }
-
-    if (isType(action, actions.install.done)) {
-        return {
-            ...state,
-            isInstalled: true,
-            isInstalling: false
-        };
-    }
-
-    if (isType(action, actions.install.failed)) {
-        return {
-            ...state,
-            isInstalling: false
-        };
-    }
-
-    if (isType(action, actions.setCollapsed)) {
-        return {
-            ...state,
-            isCollapsed: action.payload
-        };
-    }
-
-    if (isType(action, actions.createVDE.started)) {
-        return {
-            ...state,
-            isCreatingVDE: true
-        };
-    }
-    else if (isType(action, actions.createVDE.done)) {
-        return {
-            ...state,
-            isCreatingVDE: false,
-            createVDEResult: action.payload.result
-        };
-    }
-    else if (isType(action, actions.createVDE.failed)) {
-        return {
-            ...state,
-            isCreatingVDE: false,
-            createVDEResult: action.payload.error
-        };
-    }
-
-    if (isType(action, actions.registerIntl)) {
-        return {
-            ...state,
-            intl: action.payload
-        };
-    }
-
-    return state;
-};
+export default reducerWithInitialState<State>(initialState)
+    .case(actions.initialize.started, initializeHandler)
+    .case(actions.initialize.done, initializeDoneHandler)
+    .case(actions.initialize.failed, initializeFailedHandler)
+    .case(actions.setCollapsed, setCollapsedHandler)
+    .case(actions.setLocale.done, setLocaleDoneHandler);

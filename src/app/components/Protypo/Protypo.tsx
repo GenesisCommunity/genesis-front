@@ -1,57 +1,45 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-import * as React from 'react';
+import React from 'react';
 import { resolveHandler, resolveFunction } from 'components/Protypo';
-import * as propTypes from 'prop-types';
-import api from 'lib/api';
+import propTypes from 'prop-types';
 import contextDefinitions from './contexts';
-
-import Heading from 'components/Heading';
+import { TProtypoElement, ISource } from 'genesis/protypo';
 import { IValidationResult } from 'components/Validation/ValidatedForm';
-import ToolButton, { IToolButtonProps } from 'components/Protypo/components/ToolButton';
+import Heading from 'components/Heading';
+import ToolButton, { IToolButtonProps } from 'containers/ToolButton/ToolButton';
+import { IConstructorElementProps } from 'genesis/editor';
 
-export interface IProtypoProps {
-    vde?: boolean;
-    editable?: boolean;
+export interface IProtypoProps extends IConstructorElementProps {
+    apiHost: string;
     wrapper?: JSX.Element;
     context: string;
     page: string;
-    payload: IProtypoElement[];
-    menuPush: (params: { name: string, content: IProtypoElement[] }) => void;
-    navigatePage: (params: { name: string, params: any, vde?: boolean }) => void;
+    content: TProtypoElement[];
+    menuPush: (params: { name: string, content: TProtypoElement[] }) => void;
+    navigatePage: (params: { name: string, params: any, force?: boolean }) => void;
     navigate: (url: string) => void;
     displayData: (link: string) => void;
-    changePage?: any;
-    addTag?: any;
-    moveTag?: any;
-    copyTag?: any;
-    removeTag?: any;
-    setTagCanDropPosition?: any;
-    selectTag?: any;
-    selectedTag?: any;
-}
-
-export interface IProtypoElement {
-    tag: string;
-    id?: string;
-    text?: string;
-    // attr?: { [key: string]: string };
-    attr?: { [key: string]: any };  // attr can be structured
-    children?: IProtypoElement[];
 }
 
 export interface IParamsSpec {
@@ -69,9 +57,11 @@ class Protypo extends React.Component<IProtypoProps> {
     private _menuPushBind: Function;
     private _navigatePageBind: Function;
     private _navigateBind: Function;
+    private _resolveSourceBind: Function;
+    private _renderElementsBind: Function;
     private _title: string;
     private _toolButtons: IToolButtonProps[];
-    private _sources: { [key: string]: { columns: string[], types: string[], data: string[][] } };
+    private _sources: { [key: string]: ISource };
     private _errors: { name: string, description: string }[];
 
     constructor(props: IProtypoProps) {
@@ -79,6 +69,8 @@ class Protypo extends React.Component<IProtypoProps> {
         this._menuPushBind = props.menuPush.bind(this);
         this._navigatePageBind = props.navigatePage.bind(this);
         this._navigateBind = props.navigate.bind(this);
+        this._resolveSourceBind = this.resolveSource.bind(this);
+        this._renderElementsBind = this.renderElements.bind(this);
     }
 
     getChildContext() {
@@ -87,7 +79,8 @@ class Protypo extends React.Component<IProtypoProps> {
             menuPush: this._menuPushBind,
             navigatePage: this._navigatePageBind,
             navigate: this._navigateBind,
-            vde: this.props.vde
+            resolveSource: this._resolveSourceBind,
+            renderElements: this._renderElementsBind
         };
     }
 
@@ -107,7 +100,7 @@ class Protypo extends React.Component<IProtypoProps> {
         this.props.displayData(link);
     }
 
-    registerSource(name: string, payload: { columns: string[], types: string[], data: string[][] }) {
+    registerSource(name: string, payload: ISource) {
         this._sources[name] = payload;
     }
 
@@ -116,7 +109,7 @@ class Protypo extends React.Component<IProtypoProps> {
     }
 
     resolveData(name: string) {
-        return api.resolveData(name);
+        return `${this.props.apiHost}${name}`;
     }
 
     resolveParams(values: IParamsSpec, formValues?: { [key: string]: IValidationResult }) {
@@ -138,38 +131,27 @@ class Protypo extends React.Component<IProtypoProps> {
         return result;
     }
 
-    renderElement(element: IProtypoElement, optionalKey?: string): React.ReactNode {
+    renderElement(element: TProtypoElement, optionalKey?: string): React.ReactNode {
         switch (element.tag) {
             case 'text':
                 return element.text;
 
             default:
-                const Handler = resolveHandler(element.tag, this.props.editable);
+                const Handler = resolveHandler(element.tag);
                 const func = resolveFunction(element.tag);
                 if (Handler) {
-                    const selected = this.props.selectedTag && this.props.selectedTag.id === element.id;
-
                     if (-1 !== contextDefinitions[this.props.context].disabledHandlers.indexOf(element.tag)) {
                         return null;
                     }
                     else {
                         const key = optionalKey || (this._lastID++).toString();
+
                         return (
                             <Handler
                                 {...element.attr}
                                 key={key}
                                 id={key}
-                                tag={element}
                                 childrenTree={element.children}
-                                editable={this.props.editable}
-                                changePage={this.props.changePage}
-                                setTagCanDropPosition={this.props.setTagCanDropPosition}
-                                addTag={this.props.addTag}
-                                moveTag={this.props.moveTag}
-                                copyTag={this.props.copyTag}
-                                removeTag={this.props.removeTag}
-                                selectTag={this.props.selectTag}
-                                selected={selected}
                             >
                                 {this.renderElements(element.children)}
                             </Handler>
@@ -195,7 +177,7 @@ class Protypo extends React.Component<IProtypoProps> {
         }
     }
 
-    renderElements(elements: IProtypoElement[], keyPrefix?: string): React.ReactNode[] {
+    renderElements(elements: TProtypoElement[], keyPrefix?: string): React.ReactNode[] {
         if (!elements) {
             return null;
         }
@@ -206,7 +188,7 @@ class Protypo extends React.Component<IProtypoProps> {
     }
 
     renderHeading() {
-        return (this.props.context === 'page' && !this.props.editable) ? (
+        return (this.props.context === 'page' && this._title) ? (
             <Heading key="func_heading">
                 <span>{this._title}</span>
                 <div className="pull-right">
@@ -225,7 +207,7 @@ class Protypo extends React.Component<IProtypoProps> {
         this._title = null;
         this._errors = [];
 
-        const body = this.renderElements(this.props.payload);
+        const body = this.renderElements(this.props.content);
         const head = this.renderHeading();
         const children = [
             this._errors.length ? (
@@ -247,13 +229,6 @@ class Protypo extends React.Component<IProtypoProps> {
             return React.cloneElement(this.props.wrapper, this.props.wrapper.props, children);
         }
         else {
-            if (this.props.editable) {
-                return (
-                    <div>
-                        {children}
-                    </div>
-                );
-            }
             return (
                 <div className="fullscreen">
                     {children}
@@ -268,7 +243,8 @@ class Protypo extends React.Component<IProtypoProps> {
     navigatePage: propTypes.func.isRequired,
     navigate: propTypes.func.isRequired,
     menuPush: propTypes.func.isRequired,
-    vde: propTypes.bool
+    resolveSource: propTypes.func.isRequired,
+    renderElements: propTypes.func.isRequired
 };
 
 export default Protypo;

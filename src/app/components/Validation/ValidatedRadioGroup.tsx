@@ -1,18 +1,24 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
 import { Validator } from './Validators';
@@ -51,13 +57,13 @@ export default class ValidatedRadioGroup extends React.Component<IValidatedRadio
 
     componentDidMount() {
         if (this.context.form) {
-            (this.context.form as ValidatedForm)._registerElement(this.props.name, this);
+            (this.context.form as ValidatedForm)._registerElement(this);
         }
     }
 
     componentWillUnmount() {
         if (this.context.form) {
-            (this.context.form as ValidatedForm)._unregisterElement(this.props.name);
+            (this.context.form as ValidatedForm)._unregisterElement(this);
         }
     }
 
@@ -74,7 +80,7 @@ export default class ValidatedRadioGroup extends React.Component<IValidatedRadio
         return this.state.checked;
     }
 
-    onChange(e: React.ChangeEvent<HTMLInputElement>) {
+    onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({
             checked: e.target.value
         });
@@ -84,7 +90,7 @@ export default class ValidatedRadioGroup extends React.Component<IValidatedRadio
         }
     }
 
-    onBlur(e: React.FocusEvent<HTMLInputElement>) {
+    onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         (this.context.form as ValidatedForm).updateState(this.props.name);
 
         if (this.props.onBlur) {
@@ -102,8 +108,8 @@ export default class ValidatedRadioGroup extends React.Component<IValidatedRadio
                                 type="radio"
                                 name={this.props.name}
                                 value={value.value}
-                                onChange={this.onChange.bind(this)}
-                                onBlur={this.onBlur.bind(this)}
+                                onChange={this.onChange}
+                                onBlur={this.onBlur}
                                 checked={this.state.checked === value.value}
                                 disabled={value.disabled}
                             />

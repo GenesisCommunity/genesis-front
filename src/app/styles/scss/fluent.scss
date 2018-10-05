@@ -1,3 +1,25 @@
+/* MIT License
+
+Copyright (c) 2016-2018 GenesisKernel
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. */
+
 .wrapper {
     background: #17437b;
     display: flex;
@@ -10,6 +32,10 @@
         flex: 1;
         flex-direction: column;
     }
+}
+
+.monaco-editor .wrapper {
+    background: transparent;
 }
 
 .layout-fixed .wrapper > .aside {
@@ -27,6 +53,12 @@
         -webkit-app-region: drag;
         user-select: none;
         cursor: default;
+    }
+    
+    .no-drag {
+        -webkit-user-select: initial;
+        user-select: initial;
+        -webkit-app-region: no-drag;
     }
 
     .desktop-flex-col {
@@ -50,6 +82,14 @@ textarea.flex-stretch {
 
 .flex-stretch {
     flex: 1;
+}
+
+.flex-center {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
 }
 
 .panel {
@@ -128,6 +168,10 @@ textarea.flex-stretch {
     display: flex;
     flex: 1;
     flex-direction: column;
+
+    &.noscroll {
+        overflow: hidden;
+    }
 }
 
 .fullscreen-wrapper, .content-wrapper {

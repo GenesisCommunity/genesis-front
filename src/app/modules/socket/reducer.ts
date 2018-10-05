@@ -1,82 +1,59 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import { reducerWithInitialState } from 'typescript-fsa-reducers';
 import * as actions from './actions';
 import { INotificationsMessage } from 'genesis/socket';
-import { IStoredAccount } from 'genesis/storage';
+import { IWallet } from 'genesis/auth';
+import connectDoneHandler from './reducers/connectDoneHandler';
+import disconnectDoneHandler from './reducers/disconnectDoneHandler';
+import subscribeDoneHandler from './reducers/subscribeDoneHandler';
+import setNotificationsCountHandler from './reducers/setNotificationsCountHandler';
+import unsubscribeDoneHandler from './reducers/unsubscribeDoneHandler';
+import setConnectedHandler from './reducers/setConnectedHandler';
 
 export type State = {
+    readonly session: string;
     readonly socket: ICentrifuge;
+    readonly connected: boolean;
     readonly notifications: INotificationsMessage[];
     readonly subscriptions: {
-        account: IStoredAccount;
-        instance: {
-            unsubscribe: () => void;
-        };
+        wallet: IWallet;
+        instance: ISubscription;
     }[];
 };
 
 export const initialState: State = {
+    session: null,
     socket: null,
+    connected: false,
     notifications: [],
     subscriptions: []
 };
 
 export default reducerWithInitialState<State>(initialState)
-    // Connect
-    .case(actions.connect.done, (state, payload) => ({
-        ...state,
-        socket: payload.result
-    }))
-
-    // Disconnect
-    .case(actions.disconnect.done, (state, payload) => ({
-        ...state,
-        socket: null,
-        subscriptions: []
-    }))
-
-    // SetNotificationsCount
-    .case(actions.setNotificationsCount, (state, payload) => ({
-        ...state,
-        notifications: [
-            ...state.notifications.filter(l =>
-                l.id !== payload.id ||
-                l.role !== payload.role ||
-                l.ecosystem !== payload.ecosystem
-            ),
-            payload
-        ]
-    }))
-
-    // Subscribe
-    .case(actions.subscribe.done, (state, payload) => ({
-        ...state,
-        subscriptions: [
-            ...state.subscriptions,
-            {
-                account: payload.params.account,
-                instance: payload.result
-            }
-        ]
-    }))
-
-    // Unsubscribe
-    .case(actions.unsubscribe.done, (state, payload) => ({
-        ...state,
-        subscriptions: state.subscriptions.filter(l => l.account.id !== payload.params.account.id)
-    }));
+    .case(actions.connect.done, connectDoneHandler)
+    .case(actions.disconnect.done, disconnectDoneHandler)
+    .case(actions.setNotificationsCount, setNotificationsCountHandler)
+    .case(actions.setConnected, setConnectedHandler)
+    .case(actions.subscribe.done, subscribeDoneHandler)
+    .case(actions.unsubscribe.done, unsubscribeDoneHandler);

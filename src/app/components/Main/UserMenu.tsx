@@ -1,27 +1,34 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-import * as React from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
-import imgAvatar from 'images/avatar.svg';
 import { FormattedMessage } from 'react-intl';
-import { IStoredAccount } from 'genesis/storage';
+import { IWallet } from 'genesis/auth';
 
-import DropdownButton, { CloseDropdownButton } from 'components/DropdownButton';
+import { CloseDropdownButton } from 'components/DropdownButton';
+import Avatar from 'containers/Avatar';
+import PageLink from 'containers/Routing/PageLink';
+import SystemButton from './SystemButton';
 
 const StyledUserMenu = styled.div`
     -webkit-app-region: no-drag;
@@ -59,8 +66,6 @@ const StyledUserMenu = styled.div`
 
     > .user-avatar {
         float: right;
-        max-height: 32px;
-        max-width: 32px;
         margin: 4px;
     }
 
@@ -73,16 +78,17 @@ const StyledUserMenu = styled.div`
 `;
 
 export interface IUserMenuProps {
-    account: IStoredAccount;
-    ecosystemAccounts: IStoredAccount[];
-    switchAccount: (options: { account: IStoredAccount }) => void;
+    wallet: IWallet;
+    ecosystemWallets: IWallet[];
+    switchWallet: (wallet: IWallet) => void;
     logout: () => void;
+    changePassword: () => void;
 }
 
 class UserMenu extends React.Component<IUserMenuProps> {
     render() {
-        return this.props.account ? (
-            <DropdownButton
+        return this.props.wallet ? (
+            <SystemButton
                 className="p0"
                 width={225}
                 align="right"
@@ -91,49 +97,51 @@ class UserMenu extends React.Component<IUserMenuProps> {
                     <div>
                         <ul className="dropdown-group">
                             <li>
-                                <CloseDropdownButton disabled>
-                                    <em className="icon icon-key text-muted" />
+                                <CloseDropdownButton onClick={this.props.changePassword}>
+                                    <em className="icon icon-key text-muted." />
                                     <span>
-                                        <FormattedMessage id="general.account.changepassword" defaultMessage="Change password" />
+                                        <FormattedMessage id="general.wallet.changepassword" defaultMessage="Change password" />
                                     </span>
                                 </CloseDropdownButton>
                             </li>
                             <li>
-                                <Link to="/backup">
+                                <PageLink page="backup" section="home">
                                     <CloseDropdownButton>
                                         <em className="icon icon-shield text-muted" />
                                         <span>
-                                            <FormattedMessage id="general.account.backup" defaultMessage="Backup account" />
+                                            <FormattedMessage id="general.wallet.backup" defaultMessage="Backup wallet" />
                                         </span>
                                     </CloseDropdownButton>
-                                </Link>
+                                </PageLink>
                             </li>
                             <li>
                                 <CloseDropdownButton onClick={this.props.logout}>
                                     <em className="icon icon-logout text-danger" />
                                     <span>
-                                        <FormattedMessage id="general.account.signout" defaultMessage="Sign out" />
+                                        <FormattedMessage id="general.wallet.signout" defaultMessage="Sign out" />
                                     </span>
                                 </CloseDropdownButton>
                             </li>
                         </ul>
-                        <div className="dropdown-heading">Ecosystems</div>
+                        <div className="dropdown-heading">
+                            <FormattedMessage id="general.ecosystems" defaultMessage="Ecosystems" />
+                        </div>
                         <ul className="dropdown-group">
-                            {this.props.ecosystemAccounts.map(account => (
-                                <li key={account.ecosystem}>
-                                    <CloseDropdownButton onClick={account.ecosystem !== this.props.account.ecosystem && this.props.switchAccount.bind(this, { account })}>
-                                        {account.ecosystemName ?
+                            {this.props.ecosystemWallets.map(wallet => (
+                                <li key={wallet.ecosystem}>
+                                    <CloseDropdownButton onClick={wallet.ecosystem !== this.props.wallet.ecosystem && this.props.switchWallet.bind(this, wallet)}>
+                                        {wallet.ecosystemName ?
                                             (
-                                                account.ecosystemName
+                                                wallet.ecosystemName
                                             ) :
                                             (
-                                                <FormattedMessage id="general.account.ecosystemNo" defaultMessage="Ecosystem #{ecosystem}" values={{ ecosystem: account.ecosystem }} />
+                                                <FormattedMessage id="general.wallet.ecosystemNo" defaultMessage="Ecosystem #{ecosystem}" values={{ ecosystem: wallet.ecosystem }} />
                                             )
                                         }
                                     </CloseDropdownButton>
                                 </li>
                             ))}
-                            {/*_.map(this.props.account.ecosystems, ((value, key) => (
+                            {/*_.map(this.props.wallet.ecosystems, ((value, key) => (
                                 <li key={key}>
                                     <CloseDropdownButton onClick={key !== this.props.ecosystem && this.onSwitchEcosystem.bind(this, key)}>
                                         {value.name || key}
@@ -147,17 +155,22 @@ class UserMenu extends React.Component<IUserMenuProps> {
                 <StyledUserMenu>
                     <div className="user-info">
                         <div className="user-title">
-                            {this.props.account.username || this.props.account.address}
+                            {this.props.wallet.username || this.props.wallet.address}
                         </div>
                         <div className="user-subtitle">
-                            {this.props.account.ecosystemName || (
-                                <FormattedMessage id="general.account.ecosystemNo" defaultMessage="Ecosystem #{ecosystem}" values={{ ecosystem: this.props.account.ecosystem }} />
+                            {this.props.wallet.ecosystemName || (
+                                <FormattedMessage id="general.wallet.ecosystemNo" defaultMessage="Ecosystem #{ecosystem}" values={{ ecosystem: this.props.wallet.ecosystem }} />
                             )}
                         </div>
                     </div>
-                    <img className="user-avatar" src={this.props.account.avatar || imgAvatar} />
+                    <Avatar
+                        className="user-avatar"
+                        size={32}
+                        keyID={this.props.wallet.id}
+                        ecosystem={this.props.wallet.ecosystem}
+                    />
                 </StyledUserMenu>
-            </DropdownButton>
+            </SystemButton>
         ) : null;
     }
 }

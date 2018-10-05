@@ -1,61 +1,83 @@
-// Copyright 2017 The genesis-front Authors
-// This file is part of the genesis-front library.
+// MIT License
 // 
-// The genesis-front library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (c) 2016-2018 GenesisKernel
 // 
-// The genesis-front library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
-// You should have received a copy of the GNU Lesser General Public License
-// along with the genesis-front library. If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import * as React from 'react';
 import styled from 'styled-components';
 import imgControls from './wndControls.svg';
 import { remote } from 'electron';
+import { ITitlebarProps } from './';
+
+import SystemMenu from 'containers/Main/Titlebar/SystemMenu';
 
 const StyledControls = styled.div`
-    -webkit-app-region: no-drag;
     position: absolute;
     right: 1px;
+    left: 0;
     top: 0;
 
-    button {
-        cursor: default;
-        background: 0;
-        border: 0;
-        outline: 0;
-        padding: 0;
-        margin: 0;
-        width: 46px;
-        height: 28px;
-        text-align: center;
+    .window-systemmenu {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 10000;
+    }
+    
+    .window-controls {
+        position: absolute;
+        right: 0;
+        top: 0;
 
-        > i {
-            background: url(${imgControls}) 0 -56px no-repeat;
-            width: 14px;
-            height: 14px;
-            display: inline-block;
-            margin-top: 6px;
+        button {
+            cursor: default;
+            background: 0;
+            border: 0;
+            outline: 0;
+            padding: 0;
+            margin: 0;
+            width: 46px;
+            height: 28px;
+            text-align: center;
+
+            > i {
+                background: url(${imgControls}) 0 -56px no-repeat;
+                width: 14px;
+                height: 14px;
+                display: inline-block;
+                margin-top: 6px;
+            }
+
+            &:hover { background: #aaa; }
+
+            &.quit {
+                &:hover { background: #c45f5f; }
+                > i { background-position-x: 0; }
+            }
+
+            &.maximize > i { background-position-x: -14px; }
+
+            &.restore > i { background-position-x: -42px; }
+
+            &.minimize > i { background-position-x: -28px; }
         }
-
-        &:hover { background: #aaa; }
-
-        &.quit {
-            &:hover { background: #c45f5f; }
-            > i { background-position-x: 0; }
-        }
-
-        &.maximize > i { background-position-x: -14px; }
-
-        &.restore > i { background-position-x: -42px; }
-
-        &.minimize > i { background-position-x: -28px; }
     }
 `;
 
@@ -63,7 +85,7 @@ interface IWinTitlebarState {
     maximized: boolean;
 }
 
-class WinTitlebar extends React.Component<{}, IWinTitlebarState> {
+class WinTitlebar extends React.Component<ITitlebarProps, IWinTitlebarState> {
     _stateListener = this.onStateChange.bind(this);
 
     constructor(props: {}) {
@@ -108,9 +130,14 @@ class WinTitlebar extends React.Component<{}, IWinTitlebarState> {
     render() {
         return (
             <StyledControls>
-                <div className="window-controls">
+                <div className="window-systemmenu no-drag">
+                    <SystemMenu align="left" />
+                </div>
+                <div className="window-controls no-drag">
                     <button className="minimize" onClick={this.onMinimize}><i /></button>
-                    <button className={this.state.maximized ? 'restore' : 'maximize'} onClick={this.onMaximize}><i /></button>
+                    {false !== this.props.maximizable && (
+                        <button className={this.state.maximized ? 'restore' : 'maximize'} onClick={this.onMaximize}><i /></button>
+                    )}
                     <button className="quit" onClick={this.onClose}><i /></button>
                 </div>
             </StyledControls>
