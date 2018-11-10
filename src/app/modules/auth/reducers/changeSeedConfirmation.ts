@@ -20,37 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import React from 'react';
-import { connect } from 'react-redux';
-import { inviteEcosystem } from 'modules/auth/actions';
+import { State } from '../reducer';
+import { changeSeed } from '../actions';
+import { Reducer } from 'modules';
 
-export interface IInviteContainerProps {
-    ecosystem: string;
-    page?: string;
-}
+const changeSeedConfirmationHandler: Reducer<typeof changeSeed, State> = (state, payload) => ({
+    ...state,
+    seedConfirm: payload
+});
 
-interface IInviteContainerDispatch {
-    onLoad: typeof inviteEcosystem;
-}
-
-class InviteContainer extends React.Component<IInviteContainerProps & IInviteContainerDispatch> {
-    componentDidMount() {
-        const ecosystemID = parseInt(this.props.ecosystem, 10);
-        if (ecosystemID === ecosystemID) {
-            this.props.onLoad({
-                ecosystem: ecosystemID.toString(),
-                redirectPage: this.props.page
-            });
-        }
-    }
-
-    render() {
-        return null as JSX.Element;
-    }
-}
-
-const mapDispatchToProps = {
-    onLoad: inviteEcosystem
-};
-
-export default connect<{}, IInviteContainerDispatch, IInviteContainerProps>(null, mapDispatchToProps)(InviteContainer);
+export default changeSeedConfirmationHandler;
